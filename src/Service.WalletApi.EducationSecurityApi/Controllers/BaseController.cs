@@ -37,10 +37,10 @@ namespace Service.WalletApi.EducationSecurityApi.Controllers
 		}
 
 		protected async ValueTask<IActionResult> Process<TGrpcResponse, TModelResponse>(
-			Func<Guid?, ValueTask<TGrpcResponse>> grpcRequestFunc,
+			Func<string, ValueTask<TGrpcResponse>> grpcRequestFunc,
 			Func<TGrpcResponse, TModelResponse> responseFunc)
 		{
-			Guid? userId = GetUserId();
+			string userId = this.GetClientId();
 			if (userId == null)
 				return StatusResponse.Error(ResponseCode.UserNotFound);
 
@@ -51,10 +51,10 @@ namespace Service.WalletApi.EducationSecurityApi.Controllers
 
 		protected async ValueTask<IActionResult> ProcessTask<TGrpcResponse, TModelResponse>(
 			int unit, int task, TaskRequestBase request,
-			Func<Guid?, TimeSpan, ValueTask<TGrpcResponse>> grpcRequestFunc,
+			Func<string, TimeSpan, ValueTask<TGrpcResponse>> grpcRequestFunc,
 			Func<TGrpcResponse, TModelResponse> responseFunc)
 		{
-			Guid? userId = GetUserId();
+			string userId = this.GetClientId();
 			if (userId == null)
 				return StatusResponse.Error(ResponseCode.UserNotFound);
 
@@ -67,7 +67,7 @@ namespace Service.WalletApi.EducationSecurityApi.Controllers
 			return DataResponse<TModelResponse>.Ok(responseFunc.Invoke(response));
 		}
 
-		private TimeSpan? GetTimeTokenDuration(string timeToken, Guid? userId, int unit, int task)
+		private TimeSpan? GetTimeTokenDuration(string timeToken, string userId, int unit, int task)
 		{
 			TaskTimeLogGrpcRequest tokenData;
 
@@ -87,15 +87,6 @@ namespace Service.WalletApi.EducationSecurityApi.Controllers
 			TimeSpan span = _systemClock.Now.Subtract(tokenData.StartDate);
 
 			return span == TimeSpan.Zero ? (TimeSpan?) null : span;
-		}
-
-		protected Guid? GetUserId()
-		{
-			string clientId = this.GetClientId();
-			if (clientId.IsNullOrWhiteSpace())
-				return null;
-
-			return Guid.TryParse(clientId, out Guid uid) ? (Guid?) uid : null;
 		}
 	}
 }
